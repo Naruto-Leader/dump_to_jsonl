@@ -54,6 +54,7 @@ func run(args []string) int {
 
 		if strings.HasPrefix(line, "CREATE") {
 			inCreateStatement = true
+			columns = []string{}
 			continue
 		}
 
@@ -99,8 +100,6 @@ func run(args []string) int {
 				json, _ := json.Marshal(jsonData)
 				fmt.Printf("%s\n", json)
 			}
-
-			columns = []string{}
 		}
 	}
 
