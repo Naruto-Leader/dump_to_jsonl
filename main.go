@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -35,11 +36,22 @@ func run(args []string) int {
 	}
 	defer f.Close()
 
-	scanner := bufio.NewScanner(f)
+	reader := bufio.NewReader(f)
 	inCreateStatement := false
 	columns := []string{}
-	for scanner.Scan() {
-		line := scanner.Text()
+	for {
+		lineBytes, err := reader.ReadBytes('\n')
+		if err != nil {
+			if err != io.EOF {
+				fmt.Fprintln(os.Stderr, err)
+				return 1
+			} else if err == io.EOF && len(lineBytes) == 0 {
+				return 0
+			}
+		}
+
+		line := string(lineBytes)
+
 		if strings.HasPrefix(line, "CREATE") {
 			inCreateStatement = true
 			continue
@@ -62,6 +74,8 @@ func run(args []string) int {
 		}
 
 		if strings.HasPrefix(line, "INSERT") {
+			line = strings.TrimRight(line, "\n")
+			line = strings.TrimRight(line, "\r")
 			valuesListStr := line[strings.Index(line, "(")+1 : len(line)-2]
 			for _, valuesCsv := range strings.Split(valuesListStr, "),(") {
 				valuesCsv = convertForCsvParse(valuesCsv)
@@ -88,11 +102,6 @@ func run(args []string) int {
 
 			columns = []string{}
 		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
 	}
 
 	return 0
