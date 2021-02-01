@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	"os"
 	"strconv"
@@ -25,18 +26,24 @@ func deconvertForCsvParse(str string) string {
 }
 
 func run(args []string) int {
-	if len(args) != 2 {
-		return 1
+	var rd io.Reader
+
+	if terminal.IsTerminal(0) {
+		if len(args) != 2 {
+			return 1
+		}
+		f, err := os.Open(args[1])
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 1
+		}
+		defer f.Close()
+		rd = f
+	} else {
+		rd = os.Stdin
 	}
 
-	f, err := os.Open(args[1])
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		return 1
-	}
-	defer f.Close()
-
-	reader := bufio.NewReader(f)
+	reader := bufio.NewReader(rd)
 	inCreateStatement := false
 	columns := []string{}
 	for {
