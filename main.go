@@ -25,6 +25,34 @@ func deconvertForCsvParse(str string) string {
 	return strings.Replace(str, DQ, "\"", -1)
 }
 
+func printInsertStatementAsJsonl(insertStatement string, columns []string) error {
+	st := strings.TrimRight(insertStatement, "\n")
+	st = strings.TrimRight(st, "\r")
+	valuesListStr := st[strings.Index(st, "(")+1 : len(st)-2]
+	for _, valuesCsv := range strings.Split(valuesListStr, "),(") {
+		valuesCsv = convertForCsvParse(valuesCsv)
+		cr := csv.NewReader(strings.NewReader(valuesCsv))
+		values, err := cr.Read()
+		if err != nil {
+			return err
+		}
+
+		jsonData := map[string]interface{}{}
+		for i, v := range values {
+			if num, err := strconv.Atoi(v); err == nil {
+				jsonData[columns[i]] = num
+			} else if num, err := strconv.ParseFloat(v, 64); err == nil {
+				jsonData[columns[i]] = num
+			} else {
+				jsonData[columns[i]] = deconvertForCsvParse(v)
+			}
+		}
+		json, _ := json.Marshal(jsonData)
+		fmt.Printf("%s\n", json)
+	}
+	return nil
+}
+
 func run(args []string) int {
 	var rd io.Reader
 
@@ -82,30 +110,8 @@ func run(args []string) int {
 		}
 
 		if strings.HasPrefix(line, "INSERT") {
-			line = strings.TrimRight(line, "\n")
-			line = strings.TrimRight(line, "\r")
-			valuesListStr := line[strings.Index(line, "(")+1 : len(line)-2]
-			for _, valuesCsv := range strings.Split(valuesListStr, "),(") {
-				valuesCsv = convertForCsvParse(valuesCsv)
-				cr := csv.NewReader(strings.NewReader(valuesCsv))
-				values, err := cr.Read()
-				if err != nil {
-					fmt.Fprintln(os.Stderr, err)
-					return 1
-				}
-
-				jsonData := map[string]interface{}{}
-				for i, v := range values {
-					if num, err := strconv.Atoi(v); err == nil {
-						jsonData[columns[i]] = num
-					} else if num, err := strconv.ParseFloat(v, 64); err == nil {
-						jsonData[columns[i]] = num
-					} else {
-						jsonData[columns[i]] = deconvertForCsvParse(v)
-					}
-				}
-				json, _ := json.Marshal(jsonData)
-				fmt.Printf("%s\n", json)
+			if err := printInsertStatementAsJsonl(line, columns); err != nil {
+				fmt.Fprintln(os.Stderr, err)
 			}
 		}
 	}
