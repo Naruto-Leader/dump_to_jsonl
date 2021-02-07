@@ -26,9 +26,16 @@ func deconvertForCsvParse(str string) string {
 }
 
 func printInsertStatementAsJsonl(insertStatement string, columns []string) error {
-	st := strings.TrimRight(insertStatement, "\n")
-	st = strings.TrimRight(st, "\r")
-	valuesListStr := st[strings.Index(st, "(")+1 : len(st)-2]
+	stlen := len(insertStatement)
+	trimLen := 2 // ");"
+	if strings.Contains(insertStatement[stlen-trimLen:], "\r") {
+		trimLen++
+	}
+	if strings.Contains(insertStatement[stlen-trimLen:], "\n") {
+		trimLen++
+	}
+
+	valuesListStr := insertStatement[strings.Index(insertStatement, "(")+1 : stlen-trimLen]
 	for _, valuesCsv := range strings.Split(valuesListStr, "),(") {
 		valuesCsv = convertForCsvParse(valuesCsv)
 		cr := csv.NewReader(strings.NewReader(valuesCsv))
