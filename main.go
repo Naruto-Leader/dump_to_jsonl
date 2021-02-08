@@ -14,6 +14,19 @@ import (
 
 const DQ = "<<<DQ>>>"
 
+type DataType int
+
+const (
+	DataTypeInt DataType = iota
+	DataTypeFloat
+	DataTypeString
+)
+
+type Colmun struct {
+	name     string
+	dataType DataType
+}
+
 func convertForCsvParse(str string) string {
 	str = strings.Replace(str, "\"", DQ, -1)
 	str = strings.Replace(str, "'", "\"", -1)
@@ -25,7 +38,19 @@ func deconvertForCsvParse(str string) string {
 	return strings.Replace(str, DQ, "\"", -1)
 }
 
-func printInsertStatementAsJsonl(insertStatement string, columns []string) error {
+func getDataType(str string) DataType {
+	switch {
+	case strings.Contains(str, "int"):
+		return DataTypeInt
+	case strings.Contains(str, "double"):
+		return DataTypeFloat
+	case strings.Contains(str, "decimal"):
+		return DataTypeFloat
+	}
+	return DataTypeString
+}
+
+func printInsertStatementAsJsonl(insertStatement string, columns []Colmun) error {
 	stlen := len(insertStatement)
 	trimLen := 2 // ");"
 	if strings.Contains(insertStatement[stlen-trimLen:], "\r") {
@@ -46,12 +71,15 @@ func printInsertStatementAsJsonl(insertStatement string, columns []string) error
 
 		jsonData := map[string]interface{}{}
 		for i, v := range values {
-			if num, err := strconv.Atoi(v); err == nil {
-				jsonData[columns[i]] = num
-			} else if num, err := strconv.ParseFloat(v, 64); err == nil {
-				jsonData[columns[i]] = num
-			} else {
-				jsonData[columns[i]] = deconvertForCsvParse(v)
+			switch {
+			case columns[i].dataType == DataTypeInt:
+				num, _ := strconv.Atoi(v)
+				jsonData[columns[i].name] = num
+			case columns[i].dataType == DataTypeFloat:
+				num, _ := strconv.ParseFloat(v, 64)
+				jsonData[columns[i].name] = num
+			default:
+				jsonData[columns[i].name] = deconvertForCsvParse(v)
 			}
 		}
 		json, _ := json.Marshal(jsonData)
@@ -80,7 +108,7 @@ func run(args []string) int {
 
 	reader := bufio.NewReader(rd)
 	inCreateStatement := false
-	columns := []string{}
+	columns := []Colmun{}
 	for {
 		lineBytes, err := reader.ReadBytes('\n')
 		if err != nil {
@@ -96,11 +124,16 @@ func run(args []string) int {
 
 		if strings.HasPrefix(line, "CREATE") {
 			inCreateStatement = true
-			columns = []string{}
+			columns = []Colmun{}
 			continue
 		}
 
 		if inCreateStatement {
+			if strings.HasPrefix(line, ")") {
+				inCreateStatement = false
+				continue
+			}
+
 			startQuoteIndex := strings.Index(line, "`")
 			if startQuoteIndex < 0 || startQuoteIndex > 3 {
 				inCreateStatement = false
@@ -108,12 +141,12 @@ func run(args []string) int {
 			}
 
 			endQuoteIndex := startQuoteIndex + 1 + strings.Index(line[startQuoteIndex+1:], "`") + 1
-			columns = append(columns, line[startQuoteIndex+1:endQuoteIndex-1])
-
-			if strings.HasPrefix(line, ")") {
-				inCreateStatement = false
-				continue
-			}
+			dataTypeStartIndex := endQuoteIndex + 1
+			dataTypeEndIndex := dataTypeStartIndex + strings.Index(line[dataTypeStartIndex:], " ")
+			columns = append(columns, Colmun{
+				name:     line[startQuoteIndex+1 : endQuoteIndex-1],
+				dataType: getDataType(line[endQuoteIndex:dataTypeEndIndex]),
+			})
 		}
 
 		if strings.HasPrefix(line, "INSERT") {
