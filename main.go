@@ -60,9 +60,8 @@ func printInsertStatementAsJsonl(insertStatement string, columns []Colmun) error
 		trimLen++
 	}
 
-	valuesListStr := insertStatement[strings.Index(insertStatement, "(")+1 : stlen-trimLen]
+	valuesListStr := convertForCsvParse(insertStatement[strings.Index(insertStatement, "(")+1 : stlen-trimLen])
 	for _, valuesCsv := range strings.Split(valuesListStr, "),(") {
-		valuesCsv = convertForCsvParse(valuesCsv)
 		cr := csv.NewReader(strings.NewReader(valuesCsv))
 		values, err := cr.Read()
 		if err != nil {
