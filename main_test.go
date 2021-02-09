@@ -6,6 +6,22 @@ import (
 	"testing"
 )
 
+func TestConvertForCsvParse(t *testing.T) {
+	actual := convertForCsvParse(`'"\`)
+	expected := `"<<<DQ>>>"`
+	if actual != expected {
+		t.Fatalf("%v not match %v", actual, expected)
+	}
+}
+
+func TestDeconvertForCsvParse(t *testing.T) {
+	actual := deconvertForCsvParse(`"<<<DQ>>>`)
+	expected := `'"`
+	if actual != expected {
+		t.Fatalf("%v not match %v", actual, expected)
+	}
+}
+
 func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
 	defer func(stdout *os.File) {
 		os.Stdout = stdout
