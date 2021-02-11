@@ -27,15 +27,24 @@ type Colmun struct {
 	dataType DataType
 }
 
+var (
+	convertForCsvParseReplacer = strings.NewReplacer(
+		`"`, DQ,
+		`'`, `"`,
+		`\`, `"`,
+	)
+	deconvertForCsvParseReplacer = strings.NewReplacer(
+		`"`, `'`,
+		DQ, `"`,
+	)
+)
+
 func convertForCsvParse(str string) string {
-	str = strings.Replace(str, "\"", DQ, -1)
-	str = strings.Replace(str, "'", "\"", -1)
-	return strings.Replace(str, "\\", "\"", -1)
+	return convertForCsvParseReplacer.Replace(str)
 }
 
 func deconvertForCsvParse(str string) string {
-	str = strings.Replace(str, "\"", "'", -1)
-	return strings.Replace(str, DQ, "\"", -1)
+	return deconvertForCsvParseReplacer.Replace(str)
 }
 
 func getDataType(str string) DataType {
