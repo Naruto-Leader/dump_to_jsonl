@@ -22,6 +22,58 @@ func TestDeconvertForCsvParse(t *testing.T) {
 	}
 }
 
+func TestGetDataType(t *testing.T) {
+	t.Run("int", func(t *testing.T) {
+		tests := []string{
+			"`id` int(11) NOT NULL",
+			"`id` tinyint(4) NOT NULL",
+			"`id` INT(11) NOT NULL",
+			"`id` TINYINT(4) NOT NULL",
+		}
+		for _, input := range tests {
+			actual := getDataType(input)
+			expected := DataTypeInt
+			if actual != expected {
+				t.Fatalf("input:%s\n%v not match %v", input, actual, expected)
+			}
+		}
+	})
+
+	t.Run("float", func(t *testing.T) {
+		tests := []string{
+			"`id` double NOT NULL",
+			"`id` float NOT NULL",
+			"`id` decimal(10, 2) NOT NULL",
+			"`id` DOUBLE NOT NULL",
+			"`id` FLOAT NOT NULL",
+			"`id` DECIMAL(10, 2) NOT NULL",
+		}
+		for _, input := range tests {
+			actual := getDataType(input)
+			expected := DataTypeFloat
+			if actual != expected {
+				t.Fatalf("input: %s\n%v not match %v", input, actual, expected)
+			}
+		}
+	})
+
+	t.Run("string", func(t *testing.T) {
+		tests := []string{
+			"`id` varchar(255)",
+			"`id` text",
+			"`id` VARCHAR(255)",
+			"`id` TEXT",
+		}
+		for _, input := range tests {
+			actual := getDataType(input)
+			expected := DataTypeString
+			if actual != expected {
+				t.Fatalf("input: %s\n%v not match %v", input, actual, expected)
+			}
+		}
+	})
+}
+
 func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
 	defer func(stdout *os.File) {
 		os.Stdout = stdout

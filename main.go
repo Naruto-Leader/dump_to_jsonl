@@ -45,12 +45,15 @@ func deconvertForCsvParse(str string) string {
 }
 
 func getDataType(str string) DataType {
+	s := strings.ToLower(str)
 	switch {
-	case strings.Contains(str, "int"):
+	case strings.Contains(s, "int"):
 		return DataTypeInt
-	case strings.Contains(str, "double"):
+	case strings.Contains(s, "float"):
 		return DataTypeFloat
-	case strings.Contains(str, "decimal"):
+	case strings.Contains(s, "double"):
+		return DataTypeFloat
+	case strings.Contains(s, "decimal"):
 		return DataTypeFloat
 	}
 	return DataTypeString
