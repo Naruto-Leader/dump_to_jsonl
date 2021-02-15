@@ -70,9 +70,13 @@ func printInsertStatementAsJsonl(insertStatement string, columns []Colmun) error
 	}
 
 	valuesListStr := convertForCsvParse(insertStatement[strings.Index(insertStatement, "(")+1 : stlen-trimLen])
-	for _, valuesCsv := range strings.Split(valuesListStr, "),(") {
-		cr := csv.NewReader(strings.NewReader(valuesCsv))
+	valuesCsvStr := strings.Replace(valuesListStr, "),(", "\n", -1)
+	cr := csv.NewReader(strings.NewReader(valuesCsvStr))
+	for {
 		values, err := cr.Read()
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
 			return err
 		}
