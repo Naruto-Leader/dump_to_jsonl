@@ -74,10 +74,10 @@ func printInsertStatementAsJsonl(insertStatement string, columns []Colmun) error
 	cr := csv.NewReader(strings.NewReader(valuesCsvStr))
 	for {
 		values, err := cr.Read()
-		if err == io.EOF {
-			break
-		}
 		if err != nil {
+			if err == io.EOF {
+				break
+			}
 			return err
 		}
 
