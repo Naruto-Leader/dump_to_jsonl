@@ -39,8 +39,8 @@ func convertForCsvParse(str string) string {
 
 func deconvertForCsvParse(str string) string {
 	return strings.Replace(
-		strings.Replace(str, "\"", "'", -1),
-		DQ, "\"", -1,
+		strings.Replace(str, `"`, `'`, -1),
+		DQ, `"`, -1,
 	)
 }
 
