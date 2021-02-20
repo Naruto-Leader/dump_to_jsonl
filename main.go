@@ -28,6 +28,7 @@ type Colmun struct {
 }
 
 var convertForCsvParseReplacer = strings.NewReplacer(
+	`\"`, DQ,
 	`"`, DQ,
 	`'`, `"`,
 	`\`, `"`,
