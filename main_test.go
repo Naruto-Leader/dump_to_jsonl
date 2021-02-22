@@ -32,8 +32,8 @@ func captureOutput(f func() error) (string, error) {
 }
 
 func TestConvertForCsvParse(t *testing.T) {
-	actual := convertForCsvParse(`'"\`)
-	expected := `"<<<DQ>>>"`
+	actual := convertForCsvParse(`'"\\"`)
+	expected := `"<<<DQ>>>"<<<DQ>>>`
 	if actual != expected {
 		t.Fatalf("%v not match %v", actual, expected)
 	}
