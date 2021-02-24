@@ -100,29 +100,52 @@ func TestGetDataType(t *testing.T) {
 }
 
 func TestPrintInsertStatementAsJsonl(t *testing.T) {
-	columns := []Colmun{
-		{"id", DataTypeInt},
-		{"name", DataTypeString},
-		{"description", DataTypeString},
-		{"category_id", DataTypeInt},
-		{"rate", DataTypeFloat},
-		{"created_at", DataTypeString},
-	}
-	insertStatement := `INSERT INTO test_table VALUES (1,'name1','description1,\'A\':"A"',1,1.1,'2020-09-09 10:02:35'),(2,'name2','description2,\'B\':"B"',2,2.2,'2020-09-09 10:02:46');`
-	actual, err := captureOutput(func() error {
-		return printInsertStatementAsJsonl(insertStatement, columns)
-	})
+	t.Run("test_table", func(t *testing.T) {
+		columns := []Colmun{
+			{"id", DataTypeInt},
+			{"name", DataTypeString},
+			{"description", DataTypeString},
+			{"category_id", DataTypeInt},
+			{"rate", DataTypeFloat},
+			{"created_at", DataTypeString},
+		}
+		insertStatement := `INSERT INTO test_table VALUES (1,'name1','description1,\'A\':"A"',1,1.1,'2020-09-09 10:02:35'),(2,'name2','description2,\'B\':"B"',2,2.2,'2020-09-09 10:02:46');`
+		actual, err := captureOutput(func() error {
+			return printInsertStatementAsJsonl(insertStatement, columns)
+		})
 
-	if err != nil {
-		t.Fatal("err != nil")
-	}
-	expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
+		if err != nil {
+			t.Fatal("err != nil")
+		}
+		expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
 {"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
 `
-	if actual != expected {
-		t.Fatalf("%v not match %v", actual, expected)
-	}
+		if actual != expected {
+			t.Fatalf("%v not match %v", actual, expected)
+		}
+	})
 
+	t.Run("json_table", func(t *testing.T) {
+		columns := []Colmun{
+			{"id", DataTypeInt},
+			{"json", DataTypeString},
+		}
+		insertStatement := `INSERT INTO json_table VALUES (1,'{\"key\": \"value\"}'),(2,'{\"no\": 1}');
+`
+		actual, err := captureOutput(func() error {
+			return printInsertStatementAsJsonl(insertStatement, columns)
+		})
+
+		if err != nil {
+			t.Fatal("err != nil")
+		}
+		expected := `{"id":1,"json":"{\"key\": \"value\"}"}
+{"id":2,"json":"{\"no\": 1}"}
+`
+		if actual != expected {
+			t.Fatalf("%v not match %v", actual, expected)
+		}
+	})
 }
 
 func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
@@ -131,18 +154,33 @@ func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
 	}(os.Stdout)
 	os.Stdout = os.NewFile(uintptr(syscall.Stdin), os.DevNull)
 
-	columns := []Colmun{
-		{"id", DataTypeInt},
-		{"name", DataTypeString},
-		{"description", DataTypeString},
-		{"category_id", DataTypeInt},
-		{"rate", DataTypeFloat},
-		{"created_at", DataTypeString},
-	}
-	insertStatement := `INSERT INTO test_table VALUES (1,'name1','description1,\'A\':"A"',1,1.1,'2020-09-09 10:02:35'),(2,'name2','description2,\'B\':"B"',2,2.2,'2020-09-09 10:02:46');`
+	b.Run("test_table", func(b *testing.B) {
+		columns := []Colmun{
+			{"id", DataTypeInt},
+			{"name", DataTypeString},
+			{"description", DataTypeString},
+			{"category_id", DataTypeInt},
+			{"rate", DataTypeFloat},
+			{"created_at", DataTypeString},
+		}
+		insertStatement := `INSERT INTO test_table VALUES (1,'name1','description1,\'A\':"A"',1,1.1,'2020-09-09 10:02:35'),(2,'name2','description2,\'B\':"B"',2,2.2,'2020-09-09 10:02:46');`
 
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		printInsertStatementAsJsonl(insertStatement, columns)
-	}
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			printInsertStatementAsJsonl(insertStatement, columns)
+		}
+	})
+
+	b.Run("json_table", func(b *testing.B) {
+		columns := []Colmun{
+			{"id", DataTypeInt},
+			{"json", DataTypeString},
+		}
+		insertStatement := `INSERT INTO json_table VALUES (1,'{\"key\": \"value\"}'),(2,'{\"no\": 1}');
+`
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			printInsertStatementAsJsonl(insertStatement, columns)
+		}
+	})
 }
