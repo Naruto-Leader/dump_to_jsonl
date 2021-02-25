@@ -54,6 +54,10 @@ func TestGetDataType(t *testing.T) {
 			"`id` tinyint(4) NOT NULL",
 			"`id` INT(11) NOT NULL",
 			"`id` TINYINT(4) NOT NULL",
+
+			"`id` smallint(6) NOT NULL",
+			"`id` mediumint(9) NOT NULL",
+			"`id` bigint(20) NOT NULL",
 		}
 		for _, input := range tests {
 			actual := getDataType(input)
@@ -88,6 +92,11 @@ func TestGetDataType(t *testing.T) {
 			"`id` text",
 			"`id` VARCHAR(255)",
 			"`id` TEXT",
+
+			"`introduction` varchar(255)",        // Contains 'int'.
+			"`floating_roof` varchar(255)",       // Contains 'float'.
+			"`double_angle` varchar(255)",        // Contains 'double'.
+			"`circulating_decimal` varchar(255)", // Contains 'decimal'.
 		}
 		for _, input := range tests {
 			actual := getDataType(input)
