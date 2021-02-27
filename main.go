@@ -111,6 +111,7 @@ func run(args []string) int {
 
 	if terminal.IsTerminal(0) {
 		if len(args) != 2 {
+			fmt.Println("dump_to_jsonl PATHTO/dump_file.sql")
 			return 1
 		}
 		f, err := os.Open(args[1])
