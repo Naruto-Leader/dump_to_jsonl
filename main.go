@@ -89,11 +89,11 @@ func printInsertStatementAsJsonl(insertStatement string, columns []Colmun) error
 
 		jsonData := map[string]interface{}{}
 		for i, v := range values {
-			switch {
-			case columns[i].dataType == DataTypeInt:
+			switch columns[i].dataType {
+			case DataTypeInt:
 				num, _ := strconv.Atoi(v)
 				jsonData[columns[i].name] = num
-			case columns[i].dataType == DataTypeFloat:
+			case DataTypeFloat:
 				num, _ := strconv.ParseFloat(v, 64)
 				jsonData[columns[i].name] = num
 			default:
