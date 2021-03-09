@@ -108,9 +108,74 @@ func TestGetDataType(t *testing.T) {
 	})
 }
 
+func TestGetColumn(t *testing.T) {
+	t.Run("int", func(t *testing.T) {
+		tests := []string{
+			"`id` int(11) NOT NULL",
+			"`id` tinyint(4) NOT NULL",
+			"`id` INT(11) NOT NULL",
+			"`id` TINYINT(4) NOT NULL",
+
+			"`id` smallint(6) NOT NULL",
+			"`id` mediumint(9) NOT NULL",
+			"`id` bigint(20) NOT NULL",
+		}
+		expected := &Colmun{"id", DataTypeInt}
+		for _, input := range tests {
+			actual := getColumn(input)
+			if actual.name != expected.name {
+				t.Fatalf("input: %s\n%v not match %v", input, actual.name, expected.name)
+			}
+			if actual.dataType != expected.dataType {
+				t.Fatalf("input: %s\n%v not match %v", input, actual.dataType, expected.dataType)
+			}
+		}
+	})
+
+	t.Run("float", func(t *testing.T) {
+		tests := []string{
+			"`id` double NOT NULL",
+			"`id` float NOT NULL",
+			"`id` decimal(10, 2) NOT NULL",
+			"`id` DOUBLE NOT NULL",
+			"`id` FLOAT NOT NULL",
+			"`id` DECIMAL(10, 2) NOT NULL",
+		}
+		expected := &Colmun{"id", DataTypeFloat}
+		for _, input := range tests {
+			actual := getColumn(input)
+			if actual.name != expected.name {
+				t.Fatalf("input: %s\n%v not match %v", input, actual.name, expected.name)
+			}
+			if actual.dataType != expected.dataType {
+				t.Fatalf("input: %s\n%v not match %v", input, actual.dataType, expected.dataType)
+			}
+		}
+	})
+
+	t.Run("string", func(t *testing.T) {
+		tests := []string{
+			"`id` varchar(255)",
+			"`id` text",
+			"`id` VARCHAR(255)",
+			"`id` TEXT",
+		}
+		expected := &Colmun{"id", DataTypeString}
+		for _, input := range tests {
+			actual := getColumn(input)
+			if actual.name != expected.name {
+				t.Fatalf("input: %s\n%v not match %v", input, actual.name, expected.name)
+			}
+			if actual.dataType != expected.dataType {
+				t.Fatalf("input: %s\n%v not match %v", input, actual.dataType, expected.dataType)
+			}
+		}
+	})
+}
+
 func TestPrintInsertStatementAsJsonl(t *testing.T) {
 	t.Run("test_table", func(t *testing.T) {
-		columns := []Colmun{
+		columns := []*Colmun{
 			{"id", DataTypeInt},
 			{"name", DataTypeString},
 			{"description", DataTypeString},
@@ -135,7 +200,7 @@ func TestPrintInsertStatementAsJsonl(t *testing.T) {
 	})
 
 	t.Run("json_table", func(t *testing.T) {
-		columns := []Colmun{
+		columns := []*Colmun{
 			{"id", DataTypeInt},
 			{"json", DataTypeString},
 		}
@@ -164,7 +229,7 @@ func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
 	os.Stdout = os.NewFile(uintptr(syscall.Stdin), os.DevNull)
 
 	b.Run("test_table", func(b *testing.B) {
-		columns := []Colmun{
+		columns := []*Colmun{
 			{"id", DataTypeInt},
 			{"name", DataTypeString},
 			{"description", DataTypeString},
@@ -181,7 +246,7 @@ func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
 	})
 
 	b.Run("json_table", func(b *testing.B) {
-		columns := []Colmun{
+		columns := []*Colmun{
 			{"id", DataTypeInt},
 			{"json", DataTypeString},
 		}

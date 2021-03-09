@@ -65,7 +65,23 @@ func getDataType(str string) DataType {
 	return DataTypeString
 }
 
-func printInsertStatementAsJsonl(insertStatement string, columns []Colmun) error {
+func getColumn(st string) *Colmun {
+	startQuoteIndex := strings.Index(st, "`")
+	if startQuoteIndex < 0 || startQuoteIndex > 3 {
+		var c *Colmun
+		return c
+	}
+
+	endQuoteIndex := startQuoteIndex + 1 + strings.Index(st[startQuoteIndex+1:], "`") + 1
+	dataTypeStartIndex := endQuoteIndex + 1
+	dataTypeEndIndex := dataTypeStartIndex + strings.Index(st[dataTypeStartIndex:], " ")
+	return &Colmun{
+		name:     st[startQuoteIndex+1 : endQuoteIndex-1],
+		dataType: getDataType(st[endQuoteIndex:dataTypeEndIndex]),
+	}
+}
+
+func printInsertStatementAsJsonl(insertStatement string, columns []*Colmun) error {
 	stlen := len(insertStatement)
 	trimLen := 2 // ");"
 	if strings.Contains(insertStatement[stlen-trimLen:], "\r") {
@@ -127,7 +143,7 @@ func run(args []string) int {
 
 	reader := bufio.NewReader(rd)
 	inCreateStatement := false
-	columns := []Colmun{}
+	columns := []*Colmun{}
 	for {
 		lineBytes, err := reader.ReadBytes('\n')
 		if err != nil {
@@ -143,7 +159,7 @@ func run(args []string) int {
 
 		if strings.HasPrefix(line, "CREATE") {
 			inCreateStatement = true
-			columns = []Colmun{}
+			columns = []*Colmun{}
 			continue
 		}
 
@@ -153,19 +169,12 @@ func run(args []string) int {
 				continue
 			}
 
-			startQuoteIndex := strings.Index(line, "`")
-			if startQuoteIndex < 0 || startQuoteIndex > 3 {
+			column := getColumn(line)
+			if column == nil {
 				inCreateStatement = false
 				continue
 			}
-
-			endQuoteIndex := startQuoteIndex + 1 + strings.Index(line[startQuoteIndex+1:], "`") + 1
-			dataTypeStartIndex := endQuoteIndex + 1
-			dataTypeEndIndex := dataTypeStartIndex + strings.Index(line[dataTypeStartIndex:], " ")
-			columns = append(columns, Colmun{
-				name:     line[startQuoteIndex+1 : endQuoteIndex-1],
-				dataType: getDataType(line[endQuoteIndex:dataTypeEndIndex]),
-			})
+			columns = append(columns, column)
 		}
 
 		if strings.HasPrefix(line, "INSERT") {
