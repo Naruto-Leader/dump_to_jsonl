@@ -59,9 +59,9 @@ func TestGetDataType(t *testing.T) {
 			"`id` mediumint(9) NOT NULL",
 			"`id` bigint(20) NOT NULL",
 		}
+		expected := DataTypeInt
 		for _, input := range tests {
 			actual := getDataType(input)
-			expected := DataTypeInt
 			if actual != expected {
 				t.Fatalf("input:%s\n%v not match %v", input, actual, expected)
 			}
@@ -77,9 +77,9 @@ func TestGetDataType(t *testing.T) {
 			"`id` FLOAT NOT NULL",
 			"`id` DECIMAL(10, 2) NOT NULL",
 		}
+		expected := DataTypeFloat
 		for _, input := range tests {
 			actual := getDataType(input)
-			expected := DataTypeFloat
 			if actual != expected {
 				t.Fatalf("input: %s\n%v not match %v", input, actual, expected)
 			}
@@ -98,9 +98,9 @@ func TestGetDataType(t *testing.T) {
 			"`double_angle` varchar(255)",        // Contains 'double'.
 			"`circulating_decimal` varchar(255)", // Contains 'decimal'.
 		}
+		expected := DataTypeString
 		for _, input := range tests {
 			actual := getDataType(input)
-			expected := DataTypeString
 			if actual != expected {
 				t.Fatalf("input: %s\n%v not match %v", input, actual, expected)
 			}
