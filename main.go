@@ -81,7 +81,7 @@ func getColumn(st string) *Colmun {
 	}
 }
 
-func printInsertStatementAsJsonl(insertStatement string, columns []*Colmun) error {
+func printInsertStatementAsJsonl(w io.Writer, insertStatement string, columns []*Colmun) error {
 	stlen := len(insertStatement)
 	trimLen := 2 // ");"
 	if strings.Contains(insertStatement[stlen-trimLen:], "\r") {
@@ -117,7 +117,7 @@ func printInsertStatementAsJsonl(insertStatement string, columns []*Colmun) erro
 			}
 		}
 		json, _ := json.Marshal(jsonData)
-		fmt.Printf("%s\n", json)
+		fmt.Fprintf(w, "%s\n", json)
 	}
 	return nil
 }
@@ -178,7 +178,7 @@ func run(args []string) int {
 		}
 
 		if strings.HasPrefix(line, "INSERT") {
-			if err := printInsertStatementAsJsonl(line, columns); err != nil {
+			if err := printInsertStatementAsJsonl(os.Stdout, line, columns); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 			}
 		}
