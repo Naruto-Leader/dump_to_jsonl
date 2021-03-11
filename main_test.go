@@ -2,7 +2,8 @@ package main
 
 import (
 	"bytes"
-	"io"
+	// "io"
+	"io/ioutil"
 	"testing"
 )
 
@@ -209,7 +210,8 @@ func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			printInsertStatementAsJsonl(io.Discard, insertStatement, columns)
+			// ioutil.Discard -> io.Discard
+			printInsertStatementAsJsonl(ioutil.Discard, insertStatement, columns)
 		}
 	})
 
@@ -222,7 +224,8 @@ func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
 `
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			printInsertStatementAsJsonl(io.Discard, insertStatement, columns)
+			// ioutil.Discard -> io.Discard
+			printInsertStatementAsJsonl(ioutil.Discard, insertStatement, columns)
 		}
 	})
 }
