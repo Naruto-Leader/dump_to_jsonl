@@ -149,6 +149,14 @@ func TestGetColumn(t *testing.T) {
 	})
 }
 
+func TestGetTableName(t *testing.T) {
+	actual := getTableName("CREATE TABLE `table_name` (")
+	expected := "table_name"
+	if actual != expected {
+		t.Fatalf("%v not match %v", actual, expected)
+	}
+}
+
 func TestPrintInsertStatementAsJsonl(t *testing.T) {
 	t.Run("test_table", func(t *testing.T) {
 		columns := []*Colmun{

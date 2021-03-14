@@ -65,6 +65,15 @@ func getDataType(str string) DataType {
 	return DataTypeString
 }
 
+func getTableName(st string) string {
+	startQuoteIndex := strings.Index(st, "`")
+	if startQuoteIndex != 13 { // 'CREATE TABLE' `<table_name>`
+		return ""
+	}
+	endQuoteIndex := startQuoteIndex + 1 + strings.Index(st[startQuoteIndex+1:], "`") + 1
+	return st[startQuoteIndex+1 : endQuoteIndex-1]
+}
+
 func getColumn(st string) *Colmun {
 	startQuoteIndex := strings.Index(st, "`")
 	if startQuoteIndex < 0 || startQuoteIndex > 3 {
@@ -144,6 +153,7 @@ func run(args []string) int {
 	reader := bufio.NewReader(rd)
 	inCreateStatement := false
 	columns := []*Colmun{}
+	tableName := ""
 	for {
 		lineBytes, err := reader.ReadBytes('\n')
 		if err != nil {
@@ -160,6 +170,10 @@ func run(args []string) int {
 		if strings.HasPrefix(line, "CREATE") {
 			inCreateStatement = true
 			columns = []*Colmun{}
+			tableName = getTableName(line)
+			if tableName == "" {
+				fmt.Fprintln(os.Stderr, "Failed to get table name.")
+			}
 			continue
 		}
 
