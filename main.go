@@ -134,11 +134,7 @@ func printInsertStatementAsJsonl(w io.Writer, insertStatement string, columns []
 func run(args []string) int {
 	var rd io.Reader
 
-	if terminal.IsTerminal(0) {
-		if len(args) != 2 {
-			fmt.Println("dump_to_jsonl PATHTO/dump_file.sql")
-			return 1
-		}
+	if len(args) == 2 {
 		f, err := os.Open(args[1])
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
@@ -147,6 +143,10 @@ func run(args []string) int {
 		defer f.Close()
 		rd = f
 	} else {
+		if terminal.IsTerminal(0) {
+			fmt.Println("dump_to_jsonl PATHTO/dump_file.sql")
+			return 1
+		}
 		rd = os.Stdin
 	}
 
