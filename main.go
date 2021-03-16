@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/csv"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"golang.org/x/crypto/ssh/terminal"
 	"io"
@@ -33,6 +34,16 @@ var convertForCsvParseReplacer = strings.NewReplacer(
 	`'`, `"`,
 	`\`, `"`,
 )
+
+var (
+	dumpFilePath string
+)
+
+func flagInit() *flag.FlagSet {
+	flg := flag.NewFlagSet("dump_to_jsonl", flag.ExitOnError)
+	flg.StringVar(&dumpFilePath, "file", "", "dump file")
+	return flg
+}
 
 func convertForCsvParse(str string) string {
 	return convertForCsvParseReplacer.Replace(str)
@@ -132,10 +143,17 @@ func printInsertStatementAsJsonl(w io.Writer, insertStatement string, columns []
 }
 
 func run(args []string) int {
+	flg := flagInit()
+	if err := flg.Parse(args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		flg.Usage()
+		return 1
+	}
+
 	var rd io.Reader
 
-	if len(args) == 2 {
-		f, err := os.Open(args[1])
+	if dumpFilePath != "" {
+		f, err := os.Open(dumpFilePath)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
@@ -144,7 +162,7 @@ func run(args []string) int {
 		rd = f
 	} else {
 		if terminal.IsTerminal(0) {
-			fmt.Println("dump_to_jsonl PATHTO/dump_file.sql")
+			flg.Usage()
 			return 1
 		}
 		rd = os.Stdin
