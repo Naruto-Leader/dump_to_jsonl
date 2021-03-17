@@ -9,6 +9,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -37,11 +38,13 @@ var convertForCsvParseReplacer = strings.NewReplacer(
 
 var (
 	dumpFilePath string
+	outputDir    string
 )
 
 func flagInit() *flag.FlagSet {
 	flg := flag.NewFlagSet("dump_to_jsonl", flag.ExitOnError)
 	flg.StringVar(&dumpFilePath, "file", "", "dump file")
+	flg.StringVar(&outputDir, "outdir", "", "output directory")
 	return flg
 }
 
@@ -168,10 +171,20 @@ func run(args []string) int {
 		rd = os.Stdin
 	}
 
+	if outputDir != "" {
+		if _, err := os.Stat(outputDir); os.IsNotExist(err) {
+			if err := os.MkdirAll(outputDir, 0755); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return 1
+			}
+		}
+	}
+
 	reader := bufio.NewReader(rd)
 	inCreateStatement := false
 	columns := []*Colmun{}
 	tableName := ""
+	w := os.Stdout
 	for {
 		lineBytes, err := reader.ReadBytes('\n')
 		if err != nil {
@@ -192,6 +205,13 @@ func run(args []string) int {
 			if tableName == "" {
 				fmt.Fprintln(os.Stderr, "Failed to get table name.")
 			}
+			if outputDir != "" {
+				var err error
+				if w, err = os.Create(filepath.Join(outputDir, tableName+".jsonl")); err != nil {
+					fmt.Fprintln(os.Stderr, err)
+					return 1
+				}
+			}
 			continue
 		}
 
@@ -210,7 +230,7 @@ func run(args []string) int {
 		}
 
 		if strings.HasPrefix(line, "INSERT") {
-			if err := printInsertStatementAsJsonl(os.Stdout, line, columns); err != nil {
+			if err := printInsertStatementAsJsonl(w, line, columns); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 			}
 		}

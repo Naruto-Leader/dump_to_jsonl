@@ -11,7 +11,11 @@ Generate JSONL from a `mysqldump` dump file.
 ## Usage
 
 ```
-% dump_to_jsonl -file PATHTO/dump_file.sql
+Usage of dump_to_jsonl:
+  -file string
+        dump file
+  -outdir string
+        output directory
 ```
 
 ## Examples
