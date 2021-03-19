@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
-	// "io"
+	"io"
 	"io/ioutil"
+	"os"
+	"syscall"
 	"testing"
 )
 
@@ -204,6 +206,72 @@ func TestPrintInsertStatementAsJsonl(t *testing.T) {
 	})
 }
 
+func TestRun(t *testing.T) {
+	captureOutput := func(f func() int) (string, int) {
+		r, w, err := os.Pipe()
+		if err != nil {
+			panic(err)
+		}
+
+		stdout := os.Stdout
+		stderr := os.Stderr
+		os.Stdout = w
+		os.Stderr = w
+
+		ret := f()
+
+		os.Stdout = stdout
+		os.Stderr = stderr
+		w.Close()
+
+		var buf bytes.Buffer
+		io.Copy(&buf, r)
+
+		return buf.String(), ret
+	}
+
+	t.Run("one_create", func(t *testing.T) {
+		args := []string{
+			"",
+			"-file",
+			"./test/fixtures/one_create.sql",
+		}
+		output, ret := captureOutput(func() int { return run(args) })
+
+		if ret != 0 {
+			t.Fatal("ret != 0")
+		}
+		expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
+{"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
+`
+		if output != expected {
+			t.Fatalf("%v not match %v", output, expected)
+		}
+	})
+
+	t.Run("two_create", func(t *testing.T) {
+		args := []string{
+			"",
+			"-file",
+			"./test/fixtures/two_create.sql",
+		}
+		output, ret := captureOutput(func() int { return run(args) })
+
+		if ret != 0 {
+			t.Fatal("ret != 0")
+		}
+		expected := `{"id":1,"json":"{\"key\": \"value\"}"}
+{"id":2,"json":"{\"no\": 1}"}
+{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
+{"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
+`
+		if output != expected {
+			t.Fatalf("%v not match %v", output, expected)
+		}
+	})
+}
+
+// Benchmark
 func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
 	b.Run("test_table", func(b *testing.B) {
 		columns := []*Colmun{
@@ -234,6 +302,37 @@ func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			// ioutil.Discard -> io.Discard
 			printInsertStatementAsJsonl(ioutil.Discard, insertStatement, columns)
+		}
+	})
+}
+
+func BenchmarkRun(b *testing.B) {
+	defer func(stdout *os.File) {
+		os.Stdout = stdout
+	}(os.Stdout)
+	os.Stdout = os.NewFile(uintptr(syscall.Stdin), os.DevNull)
+
+	b.Run("one_create", func(b *testing.B) {
+		args := []string{
+			"",
+			"-file",
+			"./test/fixtures/one_create.sql",
+		}
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			run(args)
+		}
+	})
+
+	b.Run("two_create", func(b *testing.B) {
+		args := []string{
+			"",
+			"-file",
+			"./test/fixtures/two_create.sql",
+		}
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			run(args)
 		}
 	})
 }
