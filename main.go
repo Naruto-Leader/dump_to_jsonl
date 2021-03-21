@@ -204,6 +204,7 @@ func run(args []string) int {
 			tableName = getTableName(line)
 			if tableName == "" {
 				fmt.Fprintln(os.Stderr, "Failed to get table name.")
+				return 1
 			}
 			if outputDir != "" {
 				var err error
