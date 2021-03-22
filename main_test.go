@@ -152,11 +152,21 @@ func TestGetColumn(t *testing.T) {
 }
 
 func TestGetTableName(t *testing.T) {
-	actual := getTableName("CREATE TABLE `table_name` (")
-	expected := "table_name"
-	if actual != expected {
-		t.Fatalf("%v not match %v", actual, expected)
-	}
+	t.Run("get table name", func(t *testing.T) {
+		actual := getTableName("CREATE TABLE `table_name` (")
+		expected := "table_name"
+		if actual != expected {
+			t.Fatalf("%v not match %v", actual, expected)
+		}
+	})
+
+	t.Run("err", func(t *testing.T) {
+		actual := getTableName("DROP TABLE `table_name`;")
+		expected := ""
+		if actual != expected {
+			t.Fatalf("%v not match %v", actual, expected)
+		}
+	})
 }
 
 func TestPrintInsertStatementAsJsonl(t *testing.T) {
