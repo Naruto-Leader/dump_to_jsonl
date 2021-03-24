@@ -171,27 +171,77 @@ func TestGetTableName(t *testing.T) {
 
 func TestPrintInsertStatementAsJsonl(t *testing.T) {
 	t.Run("test_table", func(t *testing.T) {
-		columns := []*Colmun{
-			{"id", DataTypeInt},
-			{"name", DataTypeString},
-			{"description", DataTypeString},
-			{"category_id", DataTypeInt},
-			{"rate", DataTypeFloat},
-			{"created_at", DataTypeString},
-		}
-		insertStatement := `INSERT INTO test_table VALUES (1,'name1','description1,\'A\':"A"',1,1.1,'2020-09-09 10:02:35'),(2,'name2','description2,\'B\':"B"',2,2.2,'2020-09-09 10:02:46');`
-		w := new(bytes.Buffer)
-		err := printInsertStatementAsJsonl(w, insertStatement, columns)
+		t.Run("No line break", func(t *testing.T) {
+			columns := []*Colmun{
+				{"id", DataTypeInt},
+				{"name", DataTypeString},
+				{"description", DataTypeString},
+				{"category_id", DataTypeInt},
+				{"rate", DataTypeFloat},
+				{"created_at", DataTypeString},
+			}
+			insertStatement := `INSERT INTO test_table VALUES (1,'name1','description1,\'A\':"A"',1,1.1,'2020-09-09 10:02:35'),(2,'name2','description2,\'B\':"B"',2,2.2,'2020-09-09 10:02:46');`
+			w := new(bytes.Buffer)
+			err := printInsertStatementAsJsonl(w, insertStatement, columns)
 
-		if err != nil {
-			t.Fatal("err != nil")
-		}
-		expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
+			if err != nil {
+				t.Fatal("err != nil")
+			}
+			expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
 {"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
 `
-		if w.String() != expected {
-			t.Fatalf("%v not match %v", w.String(), expected)
-		}
+			if w.String() != expected {
+				t.Fatalf("%v not match %v", w.String(), expected)
+			}
+		})
+
+		t.Run(`ends with "\n"`, func(t *testing.T) {
+			columns := []*Colmun{
+				{"id", DataTypeInt},
+				{"name", DataTypeString},
+				{"description", DataTypeString},
+				{"category_id", DataTypeInt},
+				{"rate", DataTypeFloat},
+				{"created_at", DataTypeString},
+			}
+			insertStatement := `INSERT INTO test_table VALUES (1,'name1','description1,\'A\':"A"',1,1.1,'2020-09-09 10:02:35'),(2,'name2','description2,\'B\':"B"',2,2.2,'2020-09-09 10:02:46');` + "\n"
+			w := new(bytes.Buffer)
+			err := printInsertStatementAsJsonl(w, insertStatement, columns)
+
+			if err != nil {
+				t.Fatal("err != nil")
+			}
+			expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
+{"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
+`
+			if w.String() != expected {
+				t.Fatalf("%v not match %v", w.String(), expected)
+			}
+		})
+
+		t.Run(`ends with "\r\n"`, func(t *testing.T) {
+			columns := []*Colmun{
+				{"id", DataTypeInt},
+				{"name", DataTypeString},
+				{"description", DataTypeString},
+				{"category_id", DataTypeInt},
+				{"rate", DataTypeFloat},
+				{"created_at", DataTypeString},
+			}
+			insertStatement := `INSERT INTO test_table VALUES (1,'name1','description1,\'A\':"A"',1,1.1,'2020-09-09 10:02:35'),(2,'name2','description2,\'B\':"B"',2,2.2,'2020-09-09 10:02:46');` + "\r\n"
+			w := new(bytes.Buffer)
+			err := printInsertStatementAsJsonl(w, insertStatement, columns)
+
+			if err != nil {
+				t.Fatal("err != nil")
+			}
+			expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
+{"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
+`
+			if w.String() != expected {
+				t.Fatalf("%v not match %v", w.String(), expected)
+			}
+		})
 	})
 
 	t.Run("json_table", func(t *testing.T) {
