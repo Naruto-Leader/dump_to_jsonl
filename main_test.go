@@ -266,37 +266,52 @@ func TestPrintInsertStatementAsJsonl(t *testing.T) {
 	})
 }
 
-func TestRun(t *testing.T) {
-	captureOutput := func(f func() int) (string, int) {
-		r, w, err := os.Pipe()
-		if err != nil {
-			panic(err)
-		}
+func TestPrintInsertStatementAsJsonlError(t *testing.T) {
+	columns := []*Colmun{
+		{"id", DataTypeInt},
+		{"name", DataTypeString},
+	}
+	// I don't think it is possible for the data in the dump file to look like this.
+	insertStatement := `INSERT INTO test_table VALUES (1,'name1'),(2);`
+	w := new(bytes.Buffer)
+	err := printInsertStatementAsJsonl(w, insertStatement, columns)
 
-		stdout := os.Stdout
-		stderr := os.Stderr
-		os.Stdout = w
-		os.Stderr = w
+	if err == nil {
+		t.Fatal("Should be an error.")
+	}
+}
 
-		ret := f()
-
-		os.Stdout = stdout
-		os.Stderr = stderr
-		w.Close()
-
-		var buf bytes.Buffer
-		io.Copy(&buf, r)
-
-		return buf.String(), ret
+func captureRunOutput(f func() int) (string, int) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		panic(err)
 	}
 
+	stdout := os.Stdout
+	stderr := os.Stderr
+	os.Stdout = w
+	os.Stderr = w
+
+	ret := f()
+
+	os.Stdout = stdout
+	os.Stderr = stderr
+	w.Close()
+
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+
+	return buf.String(), ret
+}
+
+func TestRun(t *testing.T) {
 	t.Run("one_create", func(t *testing.T) {
 		args := []string{
 			"",
 			"-file",
 			"./test/fixtures/one_create.sql",
 		}
-		output, ret := captureOutput(func() int { return run(args) })
+		output, ret := captureRunOutput(func() int { return run(args) })
 
 		if ret != 0 {
 			t.Fatal("ret != 0")
@@ -315,7 +330,7 @@ func TestRun(t *testing.T) {
 			"-file",
 			"./test/fixtures/two_create.sql",
 		}
-		output, ret := captureOutput(func() int { return run(args) })
+		output, ret := captureRunOutput(func() int { return run(args) })
 
 		if ret != 0 {
 			t.Fatal("ret != 0")
@@ -325,6 +340,64 @@ func TestRun(t *testing.T) {
 {"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
 {"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
 `
+		if output != expected {
+			t.Fatalf("%v not match %v", output, expected)
+		}
+	})
+}
+
+func TestRunError(t *testing.T) {
+	t.Run("Failed to get table name.", func(t *testing.T) {
+		args := []string{
+			"",
+			"-file",
+			"./test/fixtures/failed_to_get_table_name.sql",
+		}
+		output, ret := captureRunOutput(func() int { return run(args) })
+
+		if ret != 1 {
+			t.Fatal("ret != 1")
+		}
+		expected := "Failed to get table name.\n"
+
+		if output != expected {
+			t.Fatalf("%v not match %v", output, expected)
+		}
+	})
+
+	t.Run("Failed: mkdir OUTPUT_DIR", func(t *testing.T) {
+		args := []string{
+			"",
+			"-file",
+			"./test/fixtures/two_create.sql",
+			"-outdir",
+			"/AAAAAAAAAAAAAAAAA",
+		}
+		output, ret := captureRunOutput(func() int { return run(args) })
+
+		if ret != 1 {
+			t.Fatal("ret != 1")
+		}
+		expected := "mkdir /AAAAAAAAAAAAAAAAA: read-only file system\n"
+		if output != expected {
+			t.Fatalf("%v not match %v", output, expected)
+		}
+	})
+
+	t.Run("Failed: open OUTPUT_FILE", func(t *testing.T) {
+		args := []string{
+			"",
+			"-file",
+			"./test/fixtures/two_create.sql",
+			"-outdir",
+			"/",
+		}
+		output, ret := captureRunOutput(func() int { return run(args) })
+
+		if ret != 1 {
+			t.Fatal("ret != 1")
+		}
+		expected := "open /json_table.jsonl: read-only file system\n"
 		if output != expected {
 			t.Fatalf("%v not match %v", output, expected)
 		}
