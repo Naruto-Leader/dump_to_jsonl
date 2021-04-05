@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"syscall"
 	"testing"
 )
@@ -347,6 +349,11 @@ func TestRun(t *testing.T) {
 }
 
 func TestRunError(t *testing.T) {
+	type TestValues struct {
+		PathForErrorTest     string
+		ExpectedErrorMessage string
+	}
+
 	t.Run("Failed to get table name.", func(t *testing.T) {
 		args := []string{
 			"",
@@ -365,39 +372,101 @@ func TestRunError(t *testing.T) {
 		}
 	})
 
-	t.Run("Failed: mkdir OUTPUT_DIR", func(t *testing.T) {
+	t.Run("Failed to load dumpfile.", func(t *testing.T) {
+		testValues := &TestValues{
+			PathForErrorTest:     "",
+			ExpectedErrorMessage: "no such file or directory",
+		}
+		if runtime.GOOS == "windows" {
+			testValues.ExpectedErrorMessage = "The system cannot find the file specified."
+		}
+
 		args := []string{
 			"",
 			"-file",
-			"./test/fixtures/two_create.sql",
-			"-outdir",
-			"/AAAAAAAAAAAAAAAAA",
+			"HOGE",
 		}
 		output, ret := captureRunOutput(func() int { return run(args) })
 
 		if ret != 1 {
 			t.Fatal("ret != 1")
 		}
-		expected := "mkdir /AAAAAAAAAAAAAAAAA: read-only file system\n"
+
+		expected := fmt.Sprintf("open HOGE: %s\n", testValues.ExpectedErrorMessage)
+		if output != expected {
+			t.Fatalf("%v not match %v", output, expected)
+		}
+	})
+
+	t.Run("Failed: mkdir OUTPUT_DIR", func(t *testing.T) {
+		testValues := &TestValues{
+			PathForErrorTest:     "/AAAAAAAAAAAAAAAAA",
+			ExpectedErrorMessage: "permission denied",
+		}
+		switch runtime.GOOS {
+		case "windows":
+			testValues = &TestValues{
+				PathForErrorTest:     "M:/",
+				ExpectedErrorMessage: "The system cannot find the path specified.",
+			}
+		case "darwin":
+			testValues.ExpectedErrorMessage = "read-only file system"
+		}
+
+		args := []string{
+			"",
+			"-file",
+			"./test/fixtures/two_create.sql",
+			"-outdir",
+			testValues.PathForErrorTest,
+		}
+		output, ret := captureRunOutput(func() int { return run(args) })
+
+		if ret != 1 {
+			t.Fatal("ret != 1")
+		}
+
+		expected := fmt.Sprintf(
+			"mkdir %s: %s\n",
+			testValues.PathForErrorTest,
+			testValues.ExpectedErrorMessage,
+		)
 		if output != expected {
 			t.Fatalf("%v not match %v", output, expected)
 		}
 	})
 
 	t.Run("Failed: open OUTPUT_FILE", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Skip this test on windows.")
+			return
+		}
+
+		testValues := &TestValues{
+			PathForErrorTest:     "/",
+			ExpectedErrorMessage: "permission denied",
+		}
+		if runtime.GOOS == "darwin" {
+			testValues.ExpectedErrorMessage = "read-only file system"
+		}
+
 		args := []string{
 			"",
 			"-file",
 			"./test/fixtures/two_create.sql",
 			"-outdir",
-			"/",
+			testValues.PathForErrorTest,
 		}
 		output, ret := captureRunOutput(func() int { return run(args) })
-
 		if ret != 1 {
 			t.Fatal("ret != 1")
 		}
-		expected := "open /json_table.jsonl: read-only file system\n"
+
+		expected := fmt.Sprintf(
+			"open %sjson_table.jsonl: %s\n",
+			testValues.PathForErrorTest,
+			testValues.ExpectedErrorMessage,
+		)
 		if output != expected {
 			t.Fatalf("%v not match %v", output, expected)
 		}
