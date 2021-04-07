@@ -326,6 +326,25 @@ func TestRun(t *testing.T) {
 		}
 	})
 
+	t.Run("one_create_does_not_have_a_key", func(t *testing.T) {
+		args := []string{
+			"",
+			"-file",
+			"./test/fixtures/one_create_does_not_have_a_key.sql",
+		}
+		output, ret := captureRunOutput(func() int { return run(args) })
+
+		if ret != 0 {
+			t.Fatal("ret != 0")
+		}
+		expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
+{"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
+`
+		if output != expected {
+			t.Fatalf("%v not match %v", output, expected)
+		}
+	})
+
 	t.Run("two_create", func(t *testing.T) {
 		args := []string{
 			"",
