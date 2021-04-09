@@ -192,7 +192,7 @@ func run(args []string) int {
 				fmt.Fprintln(os.Stderr, err)
 				return 1
 			} else if err == io.EOF && len(lineBytes) == 0 {
-				return 0
+				break
 			}
 		}
 
@@ -228,6 +228,7 @@ func run(args []string) int {
 				continue
 			}
 			columns = append(columns, column)
+			continue
 		}
 
 		if strings.HasPrefix(line, "INSERT") {
