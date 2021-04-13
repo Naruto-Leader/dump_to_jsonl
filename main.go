@@ -235,6 +235,9 @@ func run(args []string) int {
 			if err := printInsertStatementAsJsonl(w, line, columns); err != nil {
 				fmt.Fprintln(os.Stderr, err)
 			}
+			if outputDir != "" {
+				w.Close()
+			}
 		}
 	}
 
