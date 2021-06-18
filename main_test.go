@@ -151,6 +151,21 @@ func TestGetColumn(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("Invalid value", func(t *testing.T) {
+		tests := []string{
+			"id varchar(255)",
+			"111",
+			"hoge",
+		}
+		var expected *Colmun
+		for _, input := range tests {
+			actual := getColumn(input)
+			if actual != expected {
+				t.Fatalf("input: %s\n%#v not match %#v", input, actual, expected)
+			}
+		}
+	})
 }
 
 func TestGetTableName(t *testing.T) {
