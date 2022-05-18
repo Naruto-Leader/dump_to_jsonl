@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"runtime"
 	"syscall"
@@ -522,8 +521,7 @@ func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			// ioutil.Discard -> io.Discard
-			printInsertStatementAsJsonl(ioutil.Discard, insertStatement, columns)
+			printInsertStatementAsJsonl(io.Discard, insertStatement, columns)
 		}
 	})
 
@@ -536,8 +534,7 @@ func BenchmarkPrintInsertStatementAsJsonl(b *testing.B) {
 `
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			// ioutil.Discard -> io.Discard
-			printInsertStatementAsJsonl(ioutil.Discard, insertStatement, columns)
+			printInsertStatementAsJsonl(io.Discard, insertStatement, columns)
 		}
 	})
 }
