@@ -6,6 +6,7 @@
 version: 2
 updates:
   - package-ecosystem: "gomod"
+    target-branch: "main"
     directory: "/"
     schedule:
       interval: "weekly"
