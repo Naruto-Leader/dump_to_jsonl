@@ -8,22 +8,20 @@ import (
 	"runtime"
 	"syscall"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConvertForCsvParse(t *testing.T) {
 	actual := convertForCsvParse(`'"\\"`)
 	expected := `"<<<DQ>>>"<<<DQ>>>`
-	if actual != expected {
-		t.Fatalf("%v not match %v", actual, expected)
-	}
+	assert.Equal(t, expected, actual)
 }
 
 func TestDeconvertForCsvParse(t *testing.T) {
 	actual := deconvertForCsvParse(`"<<<DQ>>>`)
 	expected := `'"`
-	if actual != expected {
-		t.Fatalf("%v not match %v", actual, expected)
-	}
+	assert.Equal(t, expected, actual)
 }
 
 func TestGetDataType(t *testing.T) {
@@ -41,9 +39,7 @@ func TestGetDataType(t *testing.T) {
 		expected := DataTypeInt
 		for _, input := range tests {
 			actual := getDataType(input)
-			if actual != expected {
-				t.Fatalf("input:%s\n%v not match %v", input, actual, expected)
-			}
+			assert.Equal(t, expected, actual, input)
 		}
 	})
 
@@ -59,9 +55,7 @@ func TestGetDataType(t *testing.T) {
 		expected := DataTypeFloat
 		for _, input := range tests {
 			actual := getDataType(input)
-			if actual != expected {
-				t.Fatalf("input: %s\n%v not match %v", input, actual, expected)
-			}
+			assert.Equal(t, expected, actual, input)
 		}
 	})
 
@@ -80,9 +74,7 @@ func TestGetDataType(t *testing.T) {
 		expected := DataTypeString
 		for _, input := range tests {
 			actual := getDataType(input)
-			if actual != expected {
-				t.Fatalf("input: %s\n%v not match %v", input, actual, expected)
-			}
+			assert.Equal(t, expected, actual, input)
 		}
 	})
 }
@@ -102,12 +94,8 @@ func TestGetColumn(t *testing.T) {
 		expected := &Colmun{"id", DataTypeInt}
 		for _, input := range tests {
 			actual := getColumn(input)
-			if actual.name != expected.name {
-				t.Fatalf("input: %s\n%v not match %v", input, actual.name, expected.name)
-			}
-			if actual.dataType != expected.dataType {
-				t.Fatalf("input: %s\n%v not match %v", input, actual.dataType, expected.dataType)
-			}
+			assert.Equal(t, expected.name, actual.name, input)
+			assert.Equal(t, expected.dataType, actual.dataType, input)
 		}
 	})
 
@@ -123,12 +111,8 @@ func TestGetColumn(t *testing.T) {
 		expected := &Colmun{"id", DataTypeFloat}
 		for _, input := range tests {
 			actual := getColumn(input)
-			if actual.name != expected.name {
-				t.Fatalf("input: %s\n%v not match %v", input, actual.name, expected.name)
-			}
-			if actual.dataType != expected.dataType {
-				t.Fatalf("input: %s\n%v not match %v", input, actual.dataType, expected.dataType)
-			}
+			assert.Equal(t, expected.name, actual.name, input)
+			assert.Equal(t, expected.dataType, actual.dataType, input)
 		}
 	})
 
@@ -142,12 +126,8 @@ func TestGetColumn(t *testing.T) {
 		expected := &Colmun{"id", DataTypeString}
 		for _, input := range tests {
 			actual := getColumn(input)
-			if actual.name != expected.name {
-				t.Fatalf("input: %s\n%v not match %v", input, actual.name, expected.name)
-			}
-			if actual.dataType != expected.dataType {
-				t.Fatalf("input: %s\n%v not match %v", input, actual.dataType, expected.dataType)
-			}
+			assert.Equal(t, expected.name, actual.name, input)
+			assert.Equal(t, expected.dataType, actual.dataType, input)
 		}
 	})
 
@@ -160,9 +140,7 @@ func TestGetColumn(t *testing.T) {
 		var expected *Colmun
 		for _, input := range tests {
 			actual := getColumn(input)
-			if actual != expected {
-				t.Fatalf("input: %s\n%#v not match %#v", input, actual, expected)
-			}
+			assert.Equal(t, expected, actual, input)
 		}
 	})
 }
@@ -171,17 +149,13 @@ func TestGetTableName(t *testing.T) {
 	t.Run("get table name", func(t *testing.T) {
 		actual := getTableName("CREATE TABLE `table_name` (")
 		expected := "table_name"
-		if actual != expected {
-			t.Fatalf("%v not match %v", actual, expected)
-		}
+		assert.Equal(t, expected, actual)
 	})
 
 	t.Run("err", func(t *testing.T) {
 		actual := getTableName("DROP TABLE `table_name`;")
 		expected := ""
-		if actual != expected {
-			t.Fatalf("%v not match %v", actual, expected)
-		}
+		assert.Equal(t, expected, actual)
 	})
 }
 
@@ -199,16 +173,12 @@ func TestPrintInsertStatementAsJsonl(t *testing.T) {
 			insertStatement := `INSERT INTO test_table VALUES (1,'name1','description1,\'A\':"A"',1,1.1,'2020-09-09 10:02:35'),(2,'name2','description2,\'B\':"B"',2,2.2,'2020-09-09 10:02:46');`
 			w := new(bytes.Buffer)
 			err := printInsertStatementAsJsonl(w, insertStatement, columns)
+			assert.Nil(t, err)
 
-			if err != nil {
-				t.Fatal("err != nil")
-			}
 			expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
 {"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
 `
-			if w.String() != expected {
-				t.Fatalf("%v not match %v", w.String(), expected)
-			}
+			assert.Equal(t, expected, w.String())
 		})
 
 		t.Run(`ends with "\n"`, func(t *testing.T) {
@@ -223,16 +193,12 @@ func TestPrintInsertStatementAsJsonl(t *testing.T) {
 			insertStatement := `INSERT INTO test_table VALUES (1,'name1','description1,\'A\':"A"',1,1.1,'2020-09-09 10:02:35'),(2,'name2','description2,\'B\':"B"',2,2.2,'2020-09-09 10:02:46');` + "\n"
 			w := new(bytes.Buffer)
 			err := printInsertStatementAsJsonl(w, insertStatement, columns)
+			assert.Nil(t, err)
 
-			if err != nil {
-				t.Fatal("err != nil")
-			}
 			expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
 {"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
 `
-			if w.String() != expected {
-				t.Fatalf("%v not match %v", w.String(), expected)
-			}
+			assert.Equal(t, expected, w.String())
 		})
 
 		t.Run(`ends with "\r\n"`, func(t *testing.T) {
@@ -247,16 +213,12 @@ func TestPrintInsertStatementAsJsonl(t *testing.T) {
 			insertStatement := `INSERT INTO test_table VALUES (1,'name1','description1,\'A\':"A"',1,1.1,'2020-09-09 10:02:35'),(2,'name2','description2,\'B\':"B"',2,2.2,'2020-09-09 10:02:46');` + "\r\n"
 			w := new(bytes.Buffer)
 			err := printInsertStatementAsJsonl(w, insertStatement, columns)
+			assert.Nil(t, err)
 
-			if err != nil {
-				t.Fatal("err != nil")
-			}
 			expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
 {"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
 `
-			if w.String() != expected {
-				t.Fatalf("%v not match %v", w.String(), expected)
-			}
+			assert.Equal(t, expected, w.String())
 		})
 	})
 
@@ -269,16 +231,12 @@ func TestPrintInsertStatementAsJsonl(t *testing.T) {
 `
 		w := new(bytes.Buffer)
 		err := printInsertStatementAsJsonl(w, insertStatement, columns)
+		assert.Nil(t, err)
 
-		if err != nil {
-			t.Fatal("err != nil")
-		}
 		expected := `{"id":1,"json":"{\"key\": \"value\"}"}
 {"id":2,"json":"{\"no\": 1}"}
 `
-		if w.String() != expected {
-			t.Fatalf("%v not match %v", w.String(), expected)
-		}
+		assert.Equal(t, expected, w.String())
 	})
 }
 
@@ -291,10 +249,7 @@ func TestPrintInsertStatementAsJsonlError(t *testing.T) {
 	insertStatement := `INSERT INTO test_table VALUES (1,'name1'),(2);`
 	w := new(bytes.Buffer)
 	err := printInsertStatementAsJsonl(w, insertStatement, columns)
-
-	if err == nil {
-		t.Fatal("Should be an error.")
-	}
+	assert.NotNil(t, err)
 }
 
 func captureRunOutput(f func() int) (string, int) {
@@ -328,16 +283,12 @@ func TestRun(t *testing.T) {
 			"./test/fixtures/one_create.sql",
 		}
 		output, ret := captureRunOutput(func() int { return run(args) })
+		assert.Equal(t, 0, ret)
 
-		if ret != 0 {
-			t.Fatal("ret != 0")
-		}
 		expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
 {"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
 `
-		if output != expected {
-			t.Fatalf("%v not match %v", output, expected)
-		}
+		assert.Equal(t, expected, output)
 	})
 
 	t.Run("one_create_does_not_have_a_key", func(t *testing.T) {
@@ -347,16 +298,12 @@ func TestRun(t *testing.T) {
 			"./test/fixtures/one_create_does_not_have_a_key.sql",
 		}
 		output, ret := captureRunOutput(func() int { return run(args) })
+		assert.Equal(t, 0, ret)
 
-		if ret != 0 {
-			t.Fatal("ret != 0")
-		}
 		expected := `{"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
 {"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
 `
-		if output != expected {
-			t.Fatalf("%v not match %v", output, expected)
-		}
+		assert.Equal(t, expected, output)
 	})
 
 	t.Run("two_create", func(t *testing.T) {
@@ -366,18 +313,14 @@ func TestRun(t *testing.T) {
 			"./test/fixtures/two_create.sql",
 		}
 		output, ret := captureRunOutput(func() int { return run(args) })
+		assert.Equal(t, 0, ret)
 
-		if ret != 0 {
-			t.Fatal("ret != 0")
-		}
 		expected := `{"id":1,"json":"{\"key\": \"value\"}"}
 {"id":2,"json":"{\"no\": 1}"}
 {"category_id":1,"created_at":"2020-09-09 10:02:35","description":"description1,'A':\"A\"","id":1,"name":"name1","rate":1.1}
 {"category_id":2,"created_at":"2020-09-09 10:02:46","description":"description2,'B':\"B\"","id":2,"name":"name2","rate":2.2}
 `
-		if output != expected {
-			t.Fatalf("%v not match %v", output, expected)
-		}
+		assert.Equal(t, expected, output)
 	})
 }
 
@@ -394,15 +337,10 @@ func TestRunError(t *testing.T) {
 			"./test/fixtures/failed_to_get_table_name.sql",
 		}
 		output, ret := captureRunOutput(func() int { return run(args) })
+		assert.Equal(t, 1, ret)
 
-		if ret != 1 {
-			t.Fatal("ret != 1")
-		}
 		expected := "Failed to get table name.\n"
-
-		if output != expected {
-			t.Fatalf("%v not match %v", output, expected)
-		}
+		assert.Equal(t, expected, output)
 	})
 
 	t.Run("Failed to load dumpfile.", func(t *testing.T) {
@@ -420,15 +358,10 @@ func TestRunError(t *testing.T) {
 			"HOGE",
 		}
 		output, ret := captureRunOutput(func() int { return run(args) })
-
-		if ret != 1 {
-			t.Fatal("ret != 1")
-		}
+		assert.Equal(t, 1, ret)
 
 		expected := fmt.Sprintf("open HOGE: %s\n", testValues.ExpectedErrorMessage)
-		if output != expected {
-			t.Fatalf("%v not match %v", output, expected)
-		}
+		assert.Equal(t, expected, output)
 	})
 
 	t.Run("Failed: mkdir OUTPUT_DIR", func(t *testing.T) {
@@ -454,19 +387,14 @@ func TestRunError(t *testing.T) {
 			testValues.PathForErrorTest,
 		}
 		output, ret := captureRunOutput(func() int { return run(args) })
-
-		if ret != 1 {
-			t.Fatal("ret != 1")
-		}
+		assert.Equal(t, 1, ret)
 
 		expected := fmt.Sprintf(
 			"mkdir %s: %s\n",
 			testValues.PathForErrorTest,
 			testValues.ExpectedErrorMessage,
 		)
-		if output != expected {
-			t.Fatalf("%v not match %v", output, expected)
-		}
+		assert.Equal(t, expected, output)
 	})
 
 	t.Run("Failed: open OUTPUT_FILE", func(t *testing.T) {
@@ -491,18 +419,14 @@ func TestRunError(t *testing.T) {
 			testValues.PathForErrorTest,
 		}
 		output, ret := captureRunOutput(func() int { return run(args) })
-		if ret != 1 {
-			t.Fatal("ret != 1")
-		}
+		assert.Equal(t, 1, ret)
 
 		expected := fmt.Sprintf(
 			"open %sjson_table.jsonl: %s\n",
 			testValues.PathForErrorTest,
 			testValues.ExpectedErrorMessage,
 		)
-		if output != expected {
-			t.Fatalf("%v not match %v", output, expected)
-		}
+		assert.Equal(t, expected, output)
 	})
 }
 
