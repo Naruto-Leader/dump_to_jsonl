@@ -4,5 +4,5 @@ go 1.16
 
 require (
 	github.com/stretchr/testify v1.10.0
-	golang.org/x/crypto v0.31.0
+	golang.org/x/crypto v0.32.0
 )
